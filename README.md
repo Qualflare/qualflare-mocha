@@ -1,0 +1,132 @@
+# @qualflare/mocha
+
+[![npm version](https://img.shields.io/npm/v/%40qualflare%2Fmocha.svg)](https://www.npmjs.com/package/@qualflare/mocha)
+[![CI](https://github.com/Qualflare/qualflare-mocha/actions/workflows/ci.yml/badge.svg)](https://github.com/Qualflare/qualflare-mocha/actions/workflows/ci.yml)
+[![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](./LICENSE)
+
+A native Mocha reporter for [Qualflare](https://qualflare.com) — captures results
+directly from your `mocha` run: status, per-attempt retry history and flakiness,
+nested steps, attachments, and author-facing metadata (labels, links, tags,
+priority, custom parameters).
+
+Without it, Mocha results reach Qualflare through the JSON reporter, which
+carries pass/fail, duration and a retry count — no per-attempt history, no
+attachments, no metadata.
+
+The reporter itself makes **no network calls**. It writes a report directory, and
+[`qualflare-cli`](https://github.com/Qualflare/qualflare-cli) uploads it — which is
+what lets any number of sharded CI jobs merge into a single Launch.
+
+## Install
+
+```bash
+npm install --save-dev @qualflare/mocha
+```
+
+Requires `mocha` `>=8.0.0` (a peer dependency) and Node `>=18`. You also need
+[`@qualflare/cli`](https://github.com/Qualflare/qualflare-cli) **v0.1.24 or newer**
+— the first release that reads `localImagePath`; on an older CLI, image
+attachments are recorded from their name alone as undownloadable placeholders.
+
+## Quickstart
+
+```js
+// .mocharc.cjs
+module.exports = {
+  reporter: '@qualflare/mocha/reporter',
+  reporterOption: { environment: 'staging' },
+  // Required only for the qualflare.*() metadata API — see below.
+  require: ['@qualflare/mocha/hooks'],
+};
+```
+
+Or on the command line, where options are `key=value` strings:
+
+```bash
+mocha --reporter @qualflare/mocha/reporter \
+      --reporter-option environment=staging \
+      --require @qualflare/mocha/hooks
+```
+
+Then run your tests and upload:
+
+```bash
+npx mocha
+npm install -g @qualflare/cli
+qf login my-project "$QUALFLARE_TOKEN" --force
+qf my-project collect ./qualflare-results
+```
+
+### Why `--require @qualflare/mocha/hooks`
+
+Mocha gives a test body no way to identify itself — there is no equivalent of
+Jest's `expect.getState()` or Vitest's `task.meta` — so a root hook has to record
+the running test for `qualflare.label()` and friends to attach to. That hook must
+be a [Root Hook Plugin](https://mochajs.org/#root-hook-plugins), which is what
+this entry point is.
+
+**It is optional.** Without it every result, status, duration, error and retry is
+still reported in full; only the metadata API needs a test to attach to, and calls
+made without it are dropped with a warning rather than guessed at.
+
+### Parallel mode
+
+`mocha --parallel` is fully supported and needs no extra configuration. The
+reporter runs once in the main process and writes one report for the whole run.
+The package's own CI asserts that a run produces the **same report** with and
+without `--parallel`.
+
+### Sharded CI
+
+Point every shard at the **same** `outputDir` and collect once at the end. Each
+Mocha process writes its own uniquely-named file, so shards never overwrite each
+other, and `qf collect` merges every file in the directory into a single Launch.
+
+## Enriching your tests
+
+```js
+const { qualflare } = require('@qualflare/mocha');
+
+it('checks out', async function () {
+  qualflare.label('feature', 'checkout');
+  qualflare.link('https://example.com/issue/42', { type: 'issue', name: 'QF-42' });
+  qualflare.tag('smoke');
+  qualflare.priority('high');
+
+  await qualflare.step('add to cart', () => {
+    qualflare.parameter('sku', 'widget');
+    qualflare.parameter('token', process.env.TOKEN, { masked: true });
+  });
+});
+```
+
+Full reference in [`docs/METADATA-API.md`](./docs/METADATA-API.md).
+
+## Configuration
+
+Every option and environment variable is in
+[`docs/CONFIGURATION.md`](./docs/CONFIGURATION.md).
+
+## Known limitations
+
+- **No captured stdout/stderr.** Mocha exposes none to a reporter, so cases carry
+  no console output. Jest and Vitest reporters can; this one cannot.
+- **The metadata API needs the Root Hook Plugin.** Without `--require`, those calls
+  are dropped with a warning.
+- **No native steps.** Mocha has no step concept, so steps come only from
+  `qualflare.step()`.
+
+Full details in [`docs/LIMITATIONS.md`](./docs/LIMITATIONS.md).
+
+## Development
+
+```bash
+npm ci
+npm run build
+npm test                   # unit
+npm run test:integration   # spawns a real mocha run against test/integration/fixtures
+```
+
+## License
+
+Apache-2.0 — see [LICENSE](./LICENSE).
