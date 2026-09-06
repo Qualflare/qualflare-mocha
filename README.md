@@ -2,6 +2,7 @@
 
 [![npm version](https://img.shields.io/npm/v/%40qualflare%2Fmocha.svg)](https://www.npmjs.com/package/@qualflare/mocha)
 [![CI](https://github.com/Qualflare/qualflare-mocha/actions/workflows/ci.yml/badge.svg)](https://github.com/Qualflare/qualflare-mocha/actions/workflows/ci.yml)
+[![Qualflare](https://api.qualflare.com/p/qualflare-mocha/badge.svg)](https://reports.qualflare.com/p/qualflare-mocha/launches)
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](./LICENSE)
 
 A native Mocha reporter for [Qualflare](https://qualflare.com) — captures results
@@ -119,6 +120,20 @@ Full reference in [`docs/METADATA-API.md`](./docs/METADATA-API.md).
 
 Every option and environment variable is in
 [`docs/CONFIGURATION.md`](./docs/CONFIGURATION.md).
+
+## Test reports
+
+This reporter is tested with itself. `e2e/` is a Mocha suite covering this
+package's own behaviour — the metadata API, nested steps, image attachments and
+per-attempt retry history — run by this reporter and uploaded to Qualflare on
+every merge to `main`, using the **published** `qualflare-cli`. The results below
+are that suite's, reported through the code this README documents:
+
+[![Qualflare](https://api.qualflare.com/p/qualflare-mocha/banner.svg)](https://reports.qualflare.com/p/qualflare-mocha/launches)
+
+Every case there is meant to pass, so a red run is a real regression rather than a
+fixture failing on purpose. Deliberately-failing cases live in
+`test/integration/`, which is never uploaded.
 
 ## Known limitations
 
