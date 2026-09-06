@@ -5,7 +5,7 @@ import { logger } from '../shared/logger.js';
 import type { Case, Suite } from '../shared/types.js';
 
 /**
- * Makes a test-module path stable and portable: relative to the Jest
+ * Makes a test-module path stable and portable: relative to the
  * project root, with POSIX separators regardless of the OS that produced it.
  *
  * Without this, the same suite reported from a Windows runner and a Linux
@@ -27,7 +27,7 @@ export interface CaseWithFile {
 /**
  * Groups finished cases into one Suite per test module (file).
  *
- * Grouping happens once at `onRunComplete` rather than incrementally: Jest
+ * Grouping happens once at `EVENT_RUN_END` rather than incrementally: Mocha
  * interleaves results across worker processes, so there is no point during the
  * run at which one module's cases are known to be complete.
  */

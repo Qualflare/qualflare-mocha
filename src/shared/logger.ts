@@ -4,13 +4,13 @@
  * Two reasons it bypasses `console` entirely rather than using
  * `console.log`/`console.warn`:
  *
- * 1. **stdout is Jest's own machine-readable channel.** `jest --json` writes
+ * 1. **stdout is the reporter's own output channel.** Mocha's `json` reporter writes
  *    the run's report there, so a diagnostic line on stdout corrupts anything
  *    parsing it. The previous version claimed to avoid stdout in its header
  *    and then used `console.log` for `info` — including the one line printed on
  *    every successful run.
  *
- * 2. **Inside a Jest worker, `console` is not Node's.** Jest replaces it with
+ * 2. **Inside a Mocha worker, output is captured.** `--parallel` buffers it with
  *    a `BufferedConsole` whose output is collected into `TestResult.console`
  *    and handed to reporters. Since this module is also called from the worker
  *    side (`runtime/channel.ts`, `runtime/qualflare-api.ts`), routing through

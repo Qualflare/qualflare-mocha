@@ -114,7 +114,7 @@ export function copyImageAttachment(
  *
  * This is the shape both of this reporter's image sources actually produce:
  * `qualflare.attachment()` hands over a Buffer — the only in-memory image
- * source this reporter has, since Jest captures no artifacts of its own and can
+ * source this reporter has, since Mocha captures no artifacts of its own and can
  * carry a `body` rather than a `path`. Refusing it would leave those inline,
  * which is the thing this removes.
  */

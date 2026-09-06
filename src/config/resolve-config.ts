@@ -5,7 +5,7 @@ import { detectCi, type CiMetadata } from './ci-detect.js';
 import { detectGit, type GitInfo } from './git-detect.js';
 
 /** Options for the reporter, passed as the second element of its entry in
- * `jest.config.js`'s top-level `reporters` array:
+ * `.mocharc.cjs`'s `reporterOption`:
  * `[['@qualflare/mocha/reporter', { ... }]]`. Every field here also has an
  * environment-variable override — see the precedence table in
  * `docs/CONFIGURATION.md`. */
@@ -54,16 +54,16 @@ export interface QualflareMochaOptions {
    * merges by "every file in the directory", not by this value, so an
    * unset shardIndex costs attribution, never correctness.
    *
-   * Auto-detected, in order: `QUALFLARE_SHARD_INDEX`, then Jest's own
+   * Auto-detected from `QUALFLARE_SHARD_INDEX`. Mocha has no own
    * `--shard i/N`, which the resolved config exposes as
    * `globalConfig.shard` ({ shardIndex, shardCount }) and the reporter reads in
-   * its CONSTRUCTOR -- Jest reporters have no `onInit` hook; that is a
+   * its CONSTRUCTOR -- Mocha reporters have no `onInit` hook; that is a
    * Vitest/Playwright name, and an earlier version of this comment invented
    * both it and the field shape. `shardIndex` is 1-BASED, matching `--shard=2/3`,
    * so the reporter converts it before passing it here as
    * `deps.detectedShardIndex`.
    *
-   * Jest and Playwright both hand this to the reporter directly. Cypress
+   * Playwright hands this to the reporter directly. Mocha and Cypress
    * has no shard concept at all, and cucumber-js hides its `--shard` from
    * formatters entirely, forcing an argv scrape. */
   shardIndex?: number;
@@ -122,7 +122,7 @@ function envInt(...names: string[]): number | undefined {
 
 
 /** Resolves the full reporter configuration from, in order: the explicit
- * `options` (the second element of the `jest.config.js` reporter
+ * `options` (Mocha's `reporterOption`, the second constructor
  * tuple, `['@qualflare/mocha', { ... }]`), then `QUALFLARE_*`
  * environment variables, then `QF_*` (compat alias with the existing Go
  * CLI, where an equivalent exists), then a hardcoded default.
@@ -150,7 +150,7 @@ function envInt(...names: string[]): number | undefined {
 export function resolveConfig(
   options: QualflareMochaOptions,
   deps: { detectGit?: () => GitInfo; detectCi?: () => CiMetadata;
-    /** Jest's `config.shard.index`, already converted from its 1-based
+    /** The shard index, already converted from any 1-based
      * `current` to our 0-based index by the reporter. */
     detectedShardIndex?: number;
   } = {},

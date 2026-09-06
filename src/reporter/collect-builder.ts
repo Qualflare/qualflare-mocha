@@ -14,9 +14,9 @@ function resolveOs(config: ResolvedReporterConfig): string {
 /**
  * Launch-level browser.
  *
- * Jest is a node-first runner: an ordinary run has no browser at all, so
+ * Mocha is a node-first runner: an ordinary run has no browser at all, so
  * this is empty unless the user sets `browser` explicitly. The field is kept
- * rather than removed because the wire contract carries it and Jest's
+ * rather than removed because the wire contract carries it and Mocha's
  * browser mode gives it a real meaning.
  */
 function resolveBrowser(config: ResolvedReporterConfig, browsers: readonly string[]): string {
@@ -42,7 +42,7 @@ function resolveBrowser(config: ResolvedReporterConfig, browsers: readonly strin
  *
  * `framework` is what becomes `suites[].category` on the wire, and is the
  * value api-service validates against its test_type enum. It resolves to
- * `jest`, which migration 0242 added.
+ * `mocha`, which migration 0242 added.
  */
 export function buildCollectPayload(
   suites: Suite[],

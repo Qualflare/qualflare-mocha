@@ -40,7 +40,7 @@ export class AttachmentBudget {
   }
 
   /** Returns bytes to the budget when an attachment they were reserved for
-   * is discarded. Nothing in THIS reporter calls it: Jest reports each test
+   * is discarded. Nothing in THIS reporter calls it: Mocha reports each test
    * once, already finished, so there is no superseded attempt to unwind. Kept
    * because the budget is shared verbatim with the sibling packages, where a
    * retried test's discarded attempt does need it. */

@@ -279,7 +279,7 @@ function capTags(tags: readonly string[]): string[] {
 }
 
 /**
- * Turns one Jest assertion result plus its recorded metadata into a wire Case.
+ * Turns one finished Mocha test plus its recorded metadata into a wire Case.
  *
  * `id` is the file-relative full name, which is what makes flaky history match
  * across runs: it stays the same for what a human would call "the same test"

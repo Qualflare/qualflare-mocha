@@ -13,7 +13,7 @@
  */
 
 /** Every `duration` field in this contract is a raw integer number of
- * NANOSECONDS, with no unit marker on the wire. Jest reports
+ * NANOSECONDS, with no unit marker on the wire. Mocha reports
  * `{seconds, nanos}` — convert directly to nanoseconds (see `./duration.ts`)
  * before assigning into one of these fields. */
 export type NanosecondDuration = number;
@@ -31,10 +31,10 @@ export type CaseStatus =
 
 /**
  * The server's oneof accepts a value named after any of the ~23 frameworks it
- * auto-detects (e.g. "jest"), not just the six coarse buckets below — a
+ * auto-detects (e.g. "mocha"), not just the six coarse buckets below — a
  * suite's category is meant to say exactly which tool produced it, which is
  * what lets the UI show that tool's own logo. This reporter only ever emits
- * 'jest' (see suite-builder.ts), so that's the only
+ * 'mocha' (see suite-builder.ts), so that's the only
  * tool-specific value listed here; the six buckets remain for backward
  * compatibility / servers that haven't been upgraded.
  */
@@ -235,7 +235,7 @@ export interface Case {
 }
 
 export interface Suite {
-  /** Required, 1-255 chars. One Suite per Jest test module (file). */
+  /** Required, 1-255 chars. One Suite per Mocha spec file. */
   name: string;
   category?: FrameworkCategory;
   assertions?: number;

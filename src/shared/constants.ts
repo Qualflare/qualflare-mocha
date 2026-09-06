@@ -5,21 +5,22 @@
 
 /** Directory prefix for the metadata side-channel, under `os.tmpdir()`.
  *
- * Jest runs tests in WORKER processes and reporters in the MAIN process, and
- * offers no user-writable per-test meta channel between them — no equivalent of
- * Vitest's `task.meta`, which is serialized from worker to reporter for free.
- * Nor are we taking over `testEnvironment`: that slot is frequently already
- * occupied by a user's own environment, which is why Allure's Jest integration
- * has to ship separate `/node` and `/jsdom` builds.
+ * Mocha offers no user-writable per-test meta channel: nothing a test body can
+ * write survives to the reporter. In `--parallel` the reporter runs in the main
+ * process while tests run in workers, and a Test crosses that boundary through
+ * `Test.prototype.serialize()` -- a CLOSED allowlist, so a property set on the
+ * test object is simply absent on the other side. Measured, not assumed.
  *
- * So the in-worker runtime appends NDJSON here and the reporter drains it. The
- * directory is suffixed with the MAIN process's pid, which both sides can
- * derive without configuration: the reporter is in that process, and a worker
- * reaches it through `process.ppid`. Two concurrent Jest runs on one machine
- * therefore cannot collide.
+ * So the in-test runtime appends NDJSON into a directory here and the reporter
+ * drains it at `EVENT_RUN_END`. The reporter creates that directory with
+ * `mkdtemp` and publishes the path in `QUALFLARE_MOCHA_CHANNEL` before the run
+ * starts, which is why workers can find it: a worker inherits the environment at
+ * fork time. Two concurrent Mocha runs get two directories and cannot collide.
  *
- * Under `--runInBand` there are no workers at all, so nothing is written — see
- * `runtime/channel.ts`, which switches to an in-memory store. */
+ * The SAME path is used in serial mode. There is no in-memory shortcut, because
+ * one code path is what makes the serial/parallel parity test meaningful -- if
+ * the modes diverged internally, that test would prove nothing about the mode
+ * users actually run. */
 export const CHANNEL_DIR_PREFIX = 'qualflare-mocha-';
 
 /** Server-side caps this client should respect defensively (see
@@ -49,11 +50,13 @@ export const MAX_ATTEMPTS_PER_CASE = 50;
 export const MAX_ATTEMPT_MESSAGE_RUNES = 8192;
 export const MAX_ATTEMPT_TRACE_RUNES = 32768;
 
-/** Bounds on the per-attempt fields Jest can fill that Vitest could not.
- * `TestResult.console` gives captured stdout/stderr per test file, so unlike
- * `@qualflare/vitest` this reporter has real output to clamp — which is why it
- * takes the full `shared/text.ts` (with `clampOutputLines`) rather than the
- * truncate-only subset. */
+/** Bounds on the per-attempt text fields.
+ *
+ * Mocha exposes no captured stdout/stderr to a reporter -- it has no equivalent
+ * of Jest's `TestResult.console` -- so this reporter never populates a case's
+ * output and the OUTPUT caps below are unused today. They are kept because they
+ * mirror the server's own limits, so if Mocha ever surfaces captured output the
+ * clamp is already the right number rather than a fresh guess. */
 export const MAX_ATTEMPT_SNIPPET_RUNES = 4096;
 export const MAX_ATTEMPT_OUTPUT_RUNES = 16384;
 export const MAX_ATTEMPT_OUTPUT_LINES = 200;
