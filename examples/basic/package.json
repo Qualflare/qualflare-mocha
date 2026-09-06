@@ -1,0 +1,15 @@
+{
+  "name": "qualflare-mocha-basic-example",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Minimal Mocha project wired to the Qualflare reporter, exactly as the README documents.",
+  "scripts": {
+    "test": "mocha"
+  },
+  "devDependencies": {
+    "mocha": "^12.0.0"
+  },
+  "dependencies": {
+    "@qualflare/mocha": "file:../.."
+  }
+}

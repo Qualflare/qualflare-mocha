@@ -1,7 +1,7 @@
 {
   "name": "@qualflare/mocha",
   "version": "0.1.0",
-  "description": "Native Mocha reporter for Qualflare — captures status, per-attempt retry history, flakiness, attachments and author-facing metadata straight from your mocha run.",
+  "description": "Native Mocha reporter for Qualflare \u2014 captures status, per-attempt retry history, flakiness, attachments and author-facing metadata straight from your mocha run.",
   "keywords": [
     "mocha",
     "mocha-reporter",
@@ -33,7 +33,7 @@
     "./reporter": {
       "types": "./dist/reporter/index.d.ts",
       "import": "./dist/reporter/index.js",
-      "require": "./dist/reporter/index.cjs"
+      "require": "./reporter.cjs"
     },
     "./hooks": {
       "types": "./dist/hooks.d.ts",
@@ -44,6 +44,7 @@
   },
   "files": [
     "dist",
+    "reporter.cjs",
     "README.md",
     "LICENSE"
   ],
