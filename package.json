@@ -1,6 +1,6 @@
 {
   "name": "@qualflare/mocha",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Native Mocha reporter for Qualflare \u2014 captures status, per-attempt retry history, flakiness, attachments and author-facing metadata straight from your mocha run.",
   "keywords": [
     "mocha",

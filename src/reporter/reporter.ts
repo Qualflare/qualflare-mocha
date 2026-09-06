@@ -18,6 +18,7 @@ import * as os from 'node:os';
 import * as path from 'node:path';
 
 import { resolveConfig, type QualflareMochaOptions, type ResolvedReporterConfig } from '../config/resolve-config.js';
+import { normalizeReporterOptions } from '../config/reporter-options.js';
 import { CHANNEL_DIR_PREFIX } from '../shared/constants.js';
 import { logger } from '../shared/logger.js';
 import { fullTitleOf, testKeyOf, type MochaError, type MochaTest } from '../shared/mocha-types.js';
@@ -30,8 +31,9 @@ import { groupIntoSuites, relativizeFile, type CaseWithFile } from './suite-buil
 
 /** Options as Mocha hands them over. See the constructor for why both spellings. */
 interface MochaReporterOptions {
-  reporterOption?: QualflareMochaOptions;
-  reporterOptions?: QualflareMochaOptions;
+  /** Object on Mocha 12, `key=value` array on 8/10 — see normalizeReporterOptions. */
+  reporterOption?: QualflareMochaOptions | string[];
+  reporterOptions?: QualflareMochaOptions | string[];
 }
 
 /** The subset of Mocha's Runner this reporter uses. */
@@ -72,8 +74,8 @@ export class QualflareMochaReporter {
     // `xunit` checks `reporterOption.output`, `tap` checks
     // `reporterOptions.tapVersion`. Reading only one silently ignores the user's
     // configuration on half the versions in the declared peer range.
-    const provided = options?.reporterOption ?? options?.reporterOptions ?? {};
-    this.config = resolveConfig(provided);
+    const provided = normalizeReporterOptions(options?.reporterOption ?? options?.reporterOptions);
+    this.config = resolveConfig(provided as QualflareMochaOptions);
     this.budget = new AttachmentBudget(this.config.maxTotalAttachmentBytes);
 
     // The channel directory must exist and be exported BEFORE any worker spawns,

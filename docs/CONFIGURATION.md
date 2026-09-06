@@ -5,11 +5,25 @@ Options go in `reporterOption` in `.mocharc.cjs`:
 ```js
 module.exports = {
   reporter: '@qualflare/mocha/reporter',
-  reporterOption: { environment: 'staging' },
+  reporterOption: ['environment=staging'],
   // Required only for the qualflare.*() metadata API.
   require: ['@qualflare/mocha/hooks'],
 };
 ```
+
+**Use the array form, not an object.** Mocha reads this key differently by
+version — measured with one key set both ways:
+
+| Mocha | `['environment=staging']` | `{ environment: 'staging' }` |
+|---|---|---|
+| 8.4.0 | works | discarded before the reporter sees it |
+| 10.8.2 | works | stringified to `{'[object Object]': true}` |
+| 12.0.0 | works | works |
+
+The object form fails **silently** on 8 and 10: the run is green and every option
+falls back to its default. On 10 this reporter can at least detect the mangled
+shape and warn; on 8 it never arrives. Values are coerced, so `debug=true` and
+`shardIndex=2` become a boolean and a number.
 
 Or on the command line, where every value is a `key=value` string:
 
@@ -17,9 +31,9 @@ Or on the command line, where every value is a `key=value` string:
 mocha --reporter @qualflare/mocha/reporter --reporter-option environment=staging
 ```
 
-Mocha spells this key **both** ways depending on version — `reporterOption`
+Mocha also spells the key **both** ways depending on version — `reporterOption`
 (singular) and `reporterOptions` (plural), and its own bundled reporters disagree.
-This package reads either, so both work across the whole `>=8.0.0` peer range.
+This package reads either.
 
 **Precedence, highest first:** the option you pass → `QUALFLARE_*` → `QF_*` (a compat alias with the
 Go CLI, where one exists) → auto-detection (branch/commit/CI/shard only) → a hardcoded default.

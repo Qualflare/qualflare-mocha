@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.1.1
+
+**Fixes reporter options being silently ignored on Mocha 8 and 10.**
+
+Mocha reads `reporterOption` differently by version. Measured with one key set
+both ways:
+
+| Mocha | `['environment=staging']` | `{ environment: 'staging' }` |
+|---|---|---|
+| 8.4.0 | works | discarded before the reporter sees it |
+| 10.8.2 | works | stringified to `{'[object Object]': true}` |
+| 12.0.0 | works | works |
+
+0.1.0 documented the object form, which is correct only on Mocha 12. On 8 and 10
+it failed **silently**: the run stayed green and every option — `environment`,
+`outputDir`, everything — fell back to its default.
+
+The reporter now normalises the `key=value` array form itself, so one config
+works on every supported version, and it warns when it detects the shape Mocha 10
+leaves behind. The docs and example now use the array form.
+
+If you are on Mocha 12 and using the object form, nothing changes.
+
 ## 0.1.0
 
 First release of `@qualflare/mocha` — a native Mocha reporter for Qualflare.

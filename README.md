@@ -34,11 +34,24 @@ attachments are recorded from their name alone as undownloadable placeholders.
 // .mocharc.cjs
 module.exports = {
   reporter: '@qualflare/mocha/reporter',
-  reporterOption: { environment: 'staging' },
+  // Array of `key=value`, NOT an object — see below.
+  reporterOption: ['environment=staging'],
   // Required only for the qualflare.*() metadata API — see below.
   require: ['@qualflare/mocha/hooks'],
 };
 ```
+
+### Why `reporterOption` is an array
+
+Mocha reads this key differently across versions. An **object** works only on
+Mocha 12; on Mocha 10 it is stringified into nothing usable, and on Mocha 8 it is
+discarded outright — in both cases the run stays green and every option silently
+falls back to its default. The `key=value` **array** form works on every
+supported version, so it is the one to use.
+
+(On Mocha 10 this reporter detects the mangled object and warns. On Mocha 8 the
+object never reaches the reporter at all, so there is nothing to warn about —
+another reason to use the array.)
 
 Or on the command line, where options are `key=value` strings:
 
