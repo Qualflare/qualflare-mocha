@@ -92,9 +92,14 @@ export class QualflareMochaReporter {
       this.retries.set(key, list);
     });
 
+    // The error arrives as the SECOND argument, not on `test.err`. Measured:
+    // `test.err` was unset on every retry event and on the serial `fail` event,
+    // and present only on the parallel `fail` -- reading it alone loses the
+    // message for most failures.
     const finish = (...args: unknown[]): void => {
       const test = args[0] as MochaTest | undefined;
-      if (test) this.recordCase(test);
+      const err = args[1] as MochaError | undefined;
+      if (test) this.recordCase(test, err ?? test.err);
     };
     runner.on(EVENT_TEST_PASS, finish);
     runner.on(EVENT_TEST_FAIL, finish);
@@ -121,10 +126,15 @@ export class QualflareMochaReporter {
     }
   }
 
-  private recordCase(test: MochaTest): void {
+  private recordCase(test: MochaTest, err?: MochaError): void {
     const key = testKeyOf(test);
     const retries = this.retries.get(key) ?? [];
     this.retries.delete(key);
+    if (err) {
+      // Carried on the object the case-builder reads, so the terminal failure's
+      // message survives regardless of which mode set (or did not set) test.err.
+      test.err = err;
+    }
     // Held until EVENT_RUN_END: the channel is drained once, at the end, so
     // metadata is matched to cases after every worker has flushed its writes.
     this.pending.push({ test, retries });

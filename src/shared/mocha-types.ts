@@ -76,14 +76,19 @@ export function currentRetryOf(test: MochaTest): number {
 }
 
 /**
- * A stable identity for one test across its attempts.
+ * A stable identity for one test ACROSS ITS ATTEMPTS.
  *
- * Mocha's own `__mocha_id__` is preferred: it is allowlisted, so it survives
- * parallel mode, and it is stable across the retries of a single test. The
- * file+fullTitle fallback covers a Mocha old enough not to set it.
+ * Deliberately file + fullTitle, NOT Mocha's `__mocha_id__`. That id looks like
+ * the right key -- it is allowlisted, so it survives parallel mode -- but Mocha
+ * clones the Test on every retry and each clone gets a FRESH id. Measured on
+ * mocha@12, one flaky test produced `d3qoy3nm...`, `4Q0or3mv...` and
+ * `-Tg83JN6...` across its three attempts, in serial and parallel alike.
+ *
+ * Keying on the id therefore correlates nothing: every retry lands under its own
+ * key and the terminal event finds an empty list, silently producing attempts
+ * with no error messages. file + fullTitle is stable precisely because it is
+ * derived from the test's identity rather than from the object holding it.
  */
 export function testKeyOf(test: MochaTest): string {
-  const id = test[MOCHA_ID_PROP];
-  if (typeof id === 'string' && id.length > 0) return id;
   return `${test.file ?? ''}#${fullTitleOf(test)}`;
 }
