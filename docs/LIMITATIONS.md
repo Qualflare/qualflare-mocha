@@ -1,130 +1,117 @@
 # Known limitations
 
-What this reporter does not do, and why. Everything here is deliberate; where a
-limitation comes from Mocha rather than from this package, that is said plainly.
+Things Mocha does that this reporter does not capture, or captures only partly.
+Everything here is deliberate, and each entry says what you lose and what to do
+about it.
 
-## The metadata API requires the Root Hook Plugin
+## Tests skipped by a failing hook are missing from the report
 
-`qualflare.label()` and friends need to know which test is running. Mocha offers
-no way for a test body to identify itself — there is no `expect.getState()` as in
-Jest, and no `task.meta` as in Vitest — so `@qualflare/mocha/hooks` records the
-current test in a root `beforeEach`, and it must be loaded:
+When a `before`/`beforeEach` hook throws, Mocha reports the **hook failure** and
+then skips the tests it guarded. The hook failure is recorded — as a case named
+after the hook, e.g. `"before all" hook for "loads the cart"` — but the skipped
+tests are **not in the report at all**.
+
+So a suite of 10 tests behind a broken `before` hook produces 1 failed case, not
+1 failed and 9 skipped, and your total case count drops for that run. The failure
+is visible and attributed; the absent tests are the cost.
+
+## Nested `describe` blocks are flattened
+
+Mocha nests suites arbitrarily deep. The report has **one suite per spec file**,
+with the full `describe` path folded into each case's name:
+
+```js
+describe('checkout', () => describe('payment', () => it('declines an expired card')))
+// suite: test/checkout.spec.js
+// case:  "checkout payment declines an expired card"
+```
+
+Grouping and filtering by file works; grouping by an intermediate `describe` does
+not. Tags are the intended substitute — `qualflare.tag('payment')` gives you a
+dimension you can filter on.
+
+## The metadata API needs the Root Hook Plugin
+
+`qualflare.label()` and friends need to know which test is running, and Mocha
+gives a test body no way to identify itself. `@qualflare/mocha/hooks` records it
+in a root `beforeEach`, and must be loaded:
 
 ```js
 // .mocharc.cjs
 require: ['@qualflare/mocha/hooks'],
 ```
 
-It has to be a [Root Hook Plugin](https://mochajs.org/#root-hook-plugins) rather
-than a file that calls `beforeEach()` at module scope. Mocha installs its globals
-*after* `--require` modules load, so the module-scope form throws
-`ReferenceError: beforeEach is not defined` before any test runs — in serial mode
-as well as parallel.
+It has to be a [Root Hook Plugin](https://mochajs.org/#root-hook-plugins), not a
+file calling `beforeEach()` at module scope — Mocha installs its globals *after*
+`--require` modules load, so the module-scope form throws
+`ReferenceError: beforeEach is not defined` before any test runs.
 
-Without the plugin, results are still reported in full. Only metadata is affected,
-and those calls are **dropped with a warning** rather than attached to whichever
-test reports first. Silent misattribution is worse than absent data; the Cypress
-plugin had to fix exactly that bug once.
+Without the plugin, results are still reported in full; only metadata is
+affected, and those calls are dropped with a warning.
 
-## No captured stdout or stderr
+## Metadata outside a test body is dropped
 
-Mocha exposes no per-test console output to a reporter — there is no equivalent of
-Jest's `TestResult.console` — so a case's `stdout` is never populated.
+A `qualflare.*()` call in `before`, `after`, or at module scope has no test to
+attach to. Those calls are discarded with a warning rather than attached to
+whichever test reports first — silent misattribution is worse than absent data.
 
-The size caps for it still exist in `shared/constants.ts`, mirroring the server's
-own limits, so that if Mocha ever surfaces captured output the clamp is already
-the right number rather than a fresh guess.
+## Only the final attempt's metadata is kept for a retried test
 
-## Steps exist only in Qualflare
+With `this.retries(n)`, each attempt emits its own metadata. The reporter keeps
+the **final** attempt's labels, steps and attachments and discards the rest.
 
-`qualflare.step()` records a step in the report. Mocha has no step concept of its
-own, so steps never appear in Mocha's output, and a failing step surfaces as a
-failing test.
-
-Nesting is preserved via `parentIndex`, and steps are capped at 300 per attempt —
-well under the server's 1000-per-case limit — with anything beyond dropped and a
-warning logged.
-
-## Metadata from an abandoned retry is discarded, not merged
-
-When a test is retried, each attempt emits its own metadata. The reporter keeps
-the **final** attempt's and discards the rest, matching the rule the sibling
-reporters document: steps, metadata and attachments describe the attempt that
-decided the outcome.
-
-`attempts[]` still records every attempt's status and error, so nothing about the
-retry history is lost — only the metadata of attempts that were superseded.
+`attempts[]` still records every attempt's status and error, so the retry history
+itself is complete — it is only the metadata of superseded attempts that is lost.
 
 ## Two tests with the same full title in one file share metadata
 
-Metadata is keyed on the test's full title plus its file path. Two tests in the
-same file with an identical `describe` path *and* title cannot be told apart, so
-their metadata merges.
+Metadata is keyed on the test's full title plus its file. Two tests in one file
+with an identical `describe` path *and* title cannot be told apart, so their
+metadata merges. Their results are still reported separately.
 
-This is also why `__mocha_id__` is not used as that key, even though it looks
-ideal: Mocha **clones the Test on every retry** and each clone gets a fresh id, so
-keying on it correlates nothing across attempts.
+(This is also why Mocha's own `__mocha_id__` is not used as the key: Mocha clones
+the Test on every retry and each clone gets a fresh id, so it correlates nothing
+across attempts.)
 
-## Only allowlisted Test fields are read
+## Mocha's speed classification is not reported
 
-Under `mocha --parallel` the reporter runs in the main process while tests run in
-workers, and a Test crosses that boundary through `Test.prototype.serialize()` —
-a **closed allowlist**:
+Mocha grades each test `fast`/`medium`/`slow` against `--slow`. The report carries
+the raw duration instead; the grading is not sent.
 
-```
-$$currentRetry, $$fullTitle, $$isPending, $$retriedTest, $$slow, $$titlePath,
-body, duration, err, parent { $$fullTitle, id }, speed, state, title, type,
-file, id
-```
+## Per-case output is not captured
 
-Anything outside it is `undefined` in parallel mode even though it is present in
-serial — which is what
-[mochajs/mocha#4453](https://github.com/mochajs/mocha/issues/4453) was about. This
-reporter reads only allowlisted fields, and its CI asserts that a run produces the
-same report with and without `--parallel`.
+Mocha does not hand reporters the console output of an individual test, and this
+reporter does not install a global `console` interceptor to synthesise it —
+patching a user's console to attribute output by timing is guesswork that goes
+wrong under `--parallel`. Failures carry their error and stack; anything else you
+want in the report, attach explicitly with `qualflare.attachment()`.
 
-One consequence worth knowing: **a property you set on a test object does not
-reach the reporter in parallel mode.** That is why the metadata API writes to a
-temp-directory channel instead.
+## Node only
 
-## `$$retriedTest` is not used for retry history
+This reporter writes to the filesystem, so it runs under Mocha on Node. Mocha in
+the browser is not supported.
 
-It is allowlisted and looks like a linked list of attempts, but it was measured at
-depth 1 in serial and 0 in parallel — it points at the immediately-previous
-attempt only. Per-attempt history comes from `EVENT_TEST_RETRY` instead, which
-fires in both modes and carries each attempt's error with no opt-in. (Jest needs
-`jest.retryTimes(n, { logErrorsBeforeRetry: true })` for the same data.)
+## Caps
 
-## `parameter()` masking redacts the value
+Bounds applied per case, with anything beyond dropped and a warning logged: 300
+steps per attempt, 50 attachments, 100 labels, 20 links, 64 tags, 50 attempts.
+Attachment bytes are bounded per run by `maxTotalAttachmentBytes` (counted as
+base64, which is what the report carries).
 
-`qualflare.parameter(name, value, { masked: true })` sends the name and a masked
-marker, never the value. This is not a display hint: the value is dropped **in the
-test process**, before anything is serialized, so it never reaches the channel
-file on disk, the report, or the server.
+## Image attachments need `@qualflare/cli` v0.1.24+
 
-## Artifacts are written, not uploaded
+Images are written into `outputDir` and referenced by `localImagePath`; the CLI
+uploads them at collect time. An older CLI does not read that field, and records
+the attachment from its name alone — an undownloadable placeholder.
 
-Image attachments are written into `outputDir` and referenced by
-`localImagePath`; `qualflare-cli` uploads them at collect time and resolves each
-into a real `storageKey`. This reporter never makes a network call.
+## Not limitations
 
-**Needs `@qualflare/cli` v0.1.24+.** An older CLI does not read the field, and
-because such an attachment carries neither content nor a storage key the server
-records it from its name alone — an undownloadable placeholder.
-
-## Sharded CI: point every shard at the same `outputDir`
-
-Each Mocha process writes one uniquely-named report, so shards never overwrite
-each other. Collect the directory once at the end and `qf collect` merges every
-file into a single Launch.
-
-## Not limitations of this reporter
-
-- **No `timeout` or `aborted` status.** Mocha has no distinct timed-out state — a
-  timeout surfaces as a failure whose message begins `Timeout of ...ms exceeded` —
-  so those two wire statuses are never produced.
-- **A test with no state maps to `error`.** That happens when a hook failure
-  aborted the suite around it. `failed` would blame the test itself.
-- **No video.** Mocha records none.
-- **`describe` titles are not tags.** They are already part of the test's full
-  title.
+- **`mocha --parallel` is fully supported.** The reporter runs once in the main
+  process and writes one report; CI asserts a run produces the same report with
+  and without it.
+- **No `timeout` status.** Mocha has no distinct timed-out state — a timeout is a
+  failure whose message begins `Timeout of ...ms exceeded` — so it is reported as
+  `failed`, which is what Mocha itself reports.
+- **Sharded runs need no configuration.** Point every shard at the same
+  `outputDir`; each process writes a uniquely-named file and `qf collect` merges
+  them into one Launch.

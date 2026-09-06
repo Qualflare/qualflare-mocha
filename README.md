@@ -109,12 +109,15 @@ Every option and environment variable is in
 
 ## Known limitations
 
-- **No captured stdout/stderr.** Mocha exposes none to a reporter, so cases carry
-  no console output. Jest and Vitest reporters can; this one cannot.
-- **The metadata API needs the Root Hook Plugin.** Without `--require`, those calls
-  are dropped with a warning.
-- **No native steps.** Mocha has no step concept, so steps come only from
-  `qualflare.step()`.
+- **Tests skipped by a failing hook are missing from the report.** The hook failure
+  itself is recorded, but the tests it guarded are absent rather than marked
+  skipped, so your case count drops for that run.
+- **Nested `describe` blocks are flattened.** One suite per spec file, with the
+  describe path folded into the case name. Use tags if you need to group by an
+  intermediate `describe`.
+- **The metadata API needs the Root Hook Plugin.** Without
+  `--require @qualflare/mocha/hooks`, results are still reported in full but
+  `qualflare.*()` calls are dropped with a warning.
 
 Full details in [`docs/LIMITATIONS.md`](./docs/LIMITATIONS.md).
 
