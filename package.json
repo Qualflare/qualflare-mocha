@@ -1,0 +1,89 @@
+{
+  "name": "@qualflare/mocha",
+  "version": "0.1.0",
+  "description": "Native Mocha reporter for Qualflare — captures status, per-attempt retry history, flakiness, attachments and author-facing metadata straight from your mocha run.",
+  "keywords": [
+    "mocha",
+    "mocha-reporter",
+    "qualflare",
+    "test-reporting",
+    "test-results",
+    "reporter"
+  ],
+  "homepage": "https://github.com/Qualflare/qualflare-mocha#readme",
+  "bugs": {
+    "url": "https://github.com/Qualflare/qualflare-mocha/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Qualflare/qualflare-mocha.git"
+  },
+  "license": "Apache-2.0",
+  "author": "Qualflare",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    },
+    "./reporter": {
+      "types": "./dist/reporter/index.d.ts",
+      "import": "./dist/reporter/index.js",
+      "require": "./dist/reporter/index.cjs"
+    },
+    "./hooks": {
+      "types": "./dist/hooks.d.ts",
+      "import": "./dist/hooks.js",
+      "require": "./dist/hooks.cjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "peerDependencies": {
+    "mocha": ">=8.0.0"
+  },
+  "dependencies": {
+    "ci-info": "^4.0.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "^18.19.50",
+    "eslint": "^10.9.1",
+    "execa": "^9.3.1",
+    "mocha": "^12.0.0",
+    "prettier": "^3.3.3",
+    "tsup": "^8.2.4",
+    "typescript": "^5.6.2",
+    "typescript-eslint": "^8.5.0",
+    "vitest": "^3.2.0"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "test": "vitest run test/unit",
+    "test:integration": "vitest run test/integration --pool=forks --testTimeout=120000",
+    "test:all": "npm run test && npm run test:integration",
+    "prepublishOnly": "npm run build",
+    "test:e2e": "node -e \"require('node:fs').rmSync('e2e-results',{recursive:true,force:true})\" && mocha --config e2e/.mocharc.cjs",
+    "verify:e2e": "node e2e/verify-report.mjs",
+    "e2e": "npm run test:e2e && npm run verify:e2e"
+  }
+}
