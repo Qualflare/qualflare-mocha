@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.1.2
+
+Documentation and package metadata — no code change, and nothing to do if you
+are already on 0.1.1.
+
+`homepage` now points at https://qualflare.com/mocha-test-reporting/ instead of
+falling back to the GitHub README, and `keywords` matches the rest of the
+reporter family. The README gained the Qualflare badge and the public report
+banner for this package's own dogfood suite, which now runs on every merge.
+
 ## 0.1.1
 
 **Fixes reporter options being silently ignored on Mocha 8 and 10.**
