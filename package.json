@@ -1,16 +1,17 @@
 {
   "name": "@qualflare/mocha",
   "version": "0.1.1",
-  "description": "Native Mocha reporter for Qualflare \u2014 captures status, per-attempt retry history, flakiness, attachments and author-facing metadata straight from your mocha run.",
+  "description": "Native Mocha reporter for Qualflare — captures status, per-attempt retry history, flakiness, attachments and author-facing metadata straight from your mocha run.",
   "keywords": [
+    "qualflare",
     "mocha",
     "mocha-reporter",
-    "qualflare",
+    "test-reporter",
     "test-reporting",
     "test-results",
-    "reporter"
+    "flaky-tests"
   ],
-  "homepage": "https://github.com/Qualflare/qualflare-mocha#readme",
+  "homepage": "https://qualflare.com/mocha-test-reporting/",
   "bugs": {
     "url": "https://github.com/Qualflare/qualflare-mocha/issues"
   },
